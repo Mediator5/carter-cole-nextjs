@@ -64,8 +64,8 @@ export default function Header() {
         }`}
       >
         <div className="mx-auto flex h-[74px] w-full max-w-[1400px] items-center justify-between gap-4 px-5 sm:px-8">
-          <Link href="/" aria-label={`${site.name} home`}>
-            <Logo markWidth={78} priority />
+          <Link href="/" aria-label={`${site.name} — home`}>
+            <Logo markWidth={104} priority showWordmark={false} />
           </Link>
 
           <nav className="hidden items-center gap-0.5 min-[1340px]:flex">
