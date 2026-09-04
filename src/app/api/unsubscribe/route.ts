@@ -25,7 +25,7 @@ function page(title: string, message: string, ok: boolean) {
   );
 }
 
-function handle(token: string | null) {
+async function handle(token: string | null) {
   if (!token) {
     return page(
       "Link incomplete",
@@ -34,7 +34,7 @@ function handle(token: string | null) {
     );
   }
 
-  const sub = getSubscriberByToken(token);
+  const sub = await getSubscriberByToken(token);
   if (!sub) {
     return page(
       "Link not recognised",
@@ -51,7 +51,7 @@ function handle(token: string | null) {
     );
   }
 
-  unsubscribe(token);
+  await unsubscribe(token);
   return page(
     "You're unsubscribed",
     `${sub.email} has been removed and won't receive any more emails from us. The checklist is still yours to keep.`,

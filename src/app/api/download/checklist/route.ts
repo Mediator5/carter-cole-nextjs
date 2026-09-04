@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/checklist?e=missing", request.url));
   }
 
-  const sub = getSubscriberByToken(token);
+  const sub = await getSubscriberByToken(token);
   if (!sub) {
     return NextResponse.redirect(new URL("/checklist?e=invalid", request.url));
   }
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     );
   }
 
-  recordDownload(sub.id, "checklist");
+  await recordDownload(sub.id, "checklist");
 
   const file = fs.readFileSync(filePath);
   return new NextResponse(new Uint8Array(file), {

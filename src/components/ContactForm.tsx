@@ -23,21 +23,33 @@ export default function ContactForm({
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
     "idle"
   );
+  const [error, setError] = useState("");
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    // Captured now: `e.currentTarget` is null once the handler yields at the
+    // first await, so resetting it afterwards would throw.
+    const form = e.currentTarget;
     setStatus("sending");
-    const data = Object.fromEntries(new FormData(e.currentTarget).entries());
+    const data = Object.fromEntries(new FormData(form).entries());
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Request failed");
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error || "Request failed");
+      }
+      form.reset();
       setStatus("sent");
-      e.currentTarget.reset();
-    } catch {
+    } catch (err) {
+      setError(
+        err instanceof Error && err.message !== "Request failed"
+          ? err.message
+          : "Something went wrong sending your message. Please call us instead \u2014 we'd still love to hear from you."
+      );
       setStatus("error");
     }
   }
@@ -141,10 +153,20 @@ export default function ContactForm({
         />
       </div>
 
+      {/* Honeypot — hidden from people, catches bots. */}
+      <div className="absolute left-[-9999px]" aria-hidden>
+        <label htmlFor="contact-website">Website</label>
+        <input
+          id="contact-website"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+        />
+      </div>
+
       {status === "error" && (
         <p className="mt-5 rounded-xl bg-red-50 px-4 py-3 text-[14px] text-red-700">
-          Something went wrong sending your message. Please call us instead —
-          we&rsquo;d still love to hear from you.
+          {error}
         </p>
       )}
 

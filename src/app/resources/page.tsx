@@ -6,6 +6,7 @@ import { PageHero } from "@/components/Section";
 import PostList from "@/components/PostList";
 import Reveal from "@/components/Reveal";
 import CTA from "@/components/CTA";
+import NewsletterForm from "@/components/NewsletterForm";
 
 export const metadata: Metadata = {
   title: "Resources",
@@ -103,26 +104,7 @@ export default function ResourcesPage() {
                 Join our mailing list and we&rsquo;ll send the guide, plus
                 occasional notes on deadlines that actually matter.
               </p>
-              <form
-                className="mx-auto mt-7 flex max-w-md flex-col gap-3 sm:flex-row"
-                action="/api/contact"
-                method="post"
-              >
-                <label htmlFor="newsletter-email" className="sr-only">
-                  Email address
-                </label>
-                <input
-                  id="newsletter-email"
-                  name="email"
-                  type="email"
-                  required
-                  placeholder="you@example.com"
-                  className="w-full rounded-full border border-navy/15 px-5 py-3 text-[15px] focus:border-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-700/10"
-                />
-                <button type="submit" className="btn-primary shrink-0">
-                  Send me the guide
-                </button>
-              </form>
+              <NewsletterForm />
               <p className="mt-4 text-[12.5px] text-navy/40">
                 No spam. Unsubscribe any time.
               </p>

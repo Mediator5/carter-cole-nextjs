@@ -97,7 +97,7 @@ point it at this site and add these host-level redirects (at your DNS/host,
 Vercel `vercel.json`, or `next.config.mjs`):
 
 ```
-smarttaxiq.com/*  →  cartercoleassociates.com/smarttaxiq
+smarttaxiq.com/*  →  cartercoleandassociates.com/smarttaxiq
 ```
 
 `next.config.mjs` already contains path redirects for the old WordPress URLs

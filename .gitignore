@@ -34,6 +34,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# SQLite database — replaced by Supabase, kept ignored for old checkouts.
 data/
-private-assets/*.pdf
+
+# NOTE: private-assets/*.pdf used to be ignored here. It must NOT be, because
+# Vercel deploys from git: an untracked PDF simply does not exist in
+# production and every gated download 404s. The PDFs are still protected —
+# they live outside /public and can only be reached with a subscriber token.
+
 .env.local

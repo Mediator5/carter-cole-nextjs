@@ -45,7 +45,7 @@ SMTP_USER=your-smtp-username
 SMTP_PASS=your-smtp-password
 MAIL_FROM="Lashanda Carter <lashanda@smarttaxiq.com>"
 MAIL_REPLY_TO=lashanda@smarttaxiq.com
-SITE_URL=https://cartercoleassociates.com
+SITE_URL=https://cartercoleandassociates.com
 CRON_SECRET=a-long-random-string-nobody-can-guess
 ADMIN_PASSWORD=your-admin-password
 ```
@@ -64,7 +64,7 @@ Do **not** send list email through a personal Gmail account. Consumer
 providers rate-limit hard and it damages your domain's reputation.
 
 Whichever you choose, set up **SPF, DKIM and DMARC** records for
-`cartercoleassociates.com`. Your provider gives you the exact DNS entries.
+`cartercoleandassociates.com`. Your provider gives you the exact DNS entries.
 Without them a large share of your emails land in spam regardless of how good
 they are — this is the single highest-impact thing on this page.
 
@@ -75,12 +75,12 @@ plenty.
 
 **Linux / cPanel cron:**
 ```
-0 * * * * curl -s -H "Authorization: Bearer YOUR_CRON_SECRET" https://cartercoleassociates.com/api/cron/dispatch
+0 * * * * curl -s -H "Authorization: Bearer YOUR_CRON_SECRET" https://cartercoleandassociates.com/api/cron/dispatch
 ```
 
 **Windows Task Scheduler:**
 ```
-powershell -Command "Invoke-WebRequest -Uri https://cartercoleassociates.com/api/cron/dispatch -Headers @{Authorization='Bearer YOUR_CRON_SECRET'}"
+powershell -Command "Invoke-WebRequest -Uri https://cartercoleandassociates.com/api/cron/dispatch -Headers @{Authorization='Bearer YOUR_CRON_SECRET'}"
 ```
 
 **Vercel** — add to `vercel.json`:

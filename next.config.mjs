@@ -4,6 +4,17 @@ const nextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
   },
+  // The gated checklist PDF lives outside /public so it can't be hot-linked.
+  // On Vercel each route is bundled separately and only traced files ship, so
+  // the download route must be told to carry the PDF with it — otherwise it
+  // 404s in production while working perfectly in local dev.
+  // In Next 14 this lives under `experimental`. It moved to the top level in
+  // Next 15 — if you upgrade, unwrap it.
+  experimental: {
+    outputFileTracingIncludes: {
+      "/api/download/checklist": ["./private-assets/**"],
+    },
+  },
   async redirects() {
     return [
       // Legacy WordPress URLs from the old site → new structure.

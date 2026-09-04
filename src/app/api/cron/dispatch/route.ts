@@ -2,14 +2,26 @@ import { NextResponse } from "next/server";
 import {
   activeSubscribers,
   recordSend,
-  sentKeysFor,
+  sentKeysForAll,
+  sendsInLast24h,
   type Subscriber,
 } from "@/lib/db";
 import { sequence } from "@/lib/sequence";
-import { sendSequenceEmail, mailerConfigured } from "@/lib/mailer";
+import {
+  sendSequenceEmail,
+  mailerConfigured,
+  dailySendLimit,
+  sendThrottleMs,
+  wait,
+} from "@/lib/mailer";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+// Vercel Hobby caps serverless functions at 60s; Pro allows up to 300s.
+// The run stops itself gracefully before the ceiling either way, and picks up
+// where it left off next time — every send is recorded uniquely, so nothing
+// is ever sent twice and nothing is skipped.
+export const maxDuration = 300;
+const TIME_BUDGET_MS = Number(process.env.CRON_TIME_BUDGET_MS || 45_000);
 
 /**
  * Sends every sequence email that is due and not yet sent.
@@ -18,7 +30,7 @@ export const maxDuration = 60;
  *
  *   Linux cron:
  *     0 * * * * curl -s -H "Authorization: Bearer $CRON_SECRET" \
- *       https://cartercoleassociates.com/api/cron/dispatch
+ *       https://cartercoleandassociates.com/api/cron/dispatch
  *
  *   Windows Task Scheduler:
  *     powershell -Command "Invoke-WebRequest -Uri https://.../api/cron/dispatch
@@ -50,15 +62,28 @@ async function dispatch(dryRun: boolean) {
   const results: {
     email: string;
     emailKey: string;
-    status: "sent" | "failed" | "due";
+    status: "sent" | "failed" | "due" | "deferred";
     error?: string;
   }[] = [];
 
-  const subs = activeSubscribers();
+  const subs = await activeSubscribers();
+  const sentBySubscriber = await sentKeysForAll();
+
+  // Google enforces a hard daily cap (2,000/day on Workspace, ~500 on free
+  // Gmail and trial accounts). Blowing through it locks the account out of
+  // sending for 24 hours — including the contact form. So we stop short of
+  // our own limit and pick the rest up on the next run; nobody is skipped,
+  // they are just deferred a day.
+  const alreadySentToday = dryRun ? 0 : await sendsInLast24h();
+  let budget = Math.max(0, dailySendLimit() - alreadySentToday);
+  const throttle = sendThrottleMs();
+  const startedAt = Date.now();
+  let deferred = 0;
+  let outOfTime = false;
 
   for (const sub of subs as Subscriber[]) {
     const age = daysSince(sub.created_at);
-    const sent = new Set(sentKeysFor(sub.id));
+    const sent = sentBySubscriber.get(sub.id) ?? new Set<string>();
 
     for (const email of sequence) {
       if (sent.has(email.key)) continue;
@@ -69,13 +94,33 @@ async function dispatch(dryRun: boolean) {
         continue;
       }
 
+      if (!outOfTime && Date.now() - startedAt > TIME_BUDGET_MS) {
+        outOfTime = true;
+      }
+
+      if (budget <= 0 || outOfTime) {
+        deferred++;
+        results.push({
+          email: sub.email,
+          emailKey: email.key,
+          status: "deferred",
+          error: outOfTime
+            ? "Run out of time; will go out on the next run."
+            : "Daily send limit reached; will go out on the next run.",
+        });
+        break;
+      }
+
       try {
         await sendSequenceEmail(email, sub);
-        recordSend(sub.id, email.key, "sent");
+        await recordSend(sub.id, email.key, "sent");
+        budget--;
         results.push({ email: sub.email, emailKey: email.key, status: "sent" });
+        // Pace the run so Google doesn't see it as a burst.
+        if (throttle > 0) await wait(throttle);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "unknown error";
-        recordSend(sub.id, email.key, "failed", msg);
+        await recordSend(sub.id, email.key, "failed", msg);
         results.push({
           email: sub.email,
           emailKey: email.key,
@@ -90,7 +135,7 @@ async function dispatch(dryRun: boolean) {
     }
   }
 
-  return results;
+  return { results, deferred, outOfTime };
 }
 
 export async function GET(request: Request) {
@@ -110,7 +155,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const results = await dispatch(dryRun);
+  const { results, deferred, outOfTime } = await dispatch(dryRun);
 
   return NextResponse.json({
     ok: true,
@@ -118,6 +163,9 @@ export async function GET(request: Request) {
     processed: results.length,
     sent: results.filter((r) => r.status === "sent").length,
     failed: results.filter((r) => r.status === "failed").length,
+    deferred,
+    outOfTime,
+    dailyLimit: dailySendLimit(),
     results,
   });
 }

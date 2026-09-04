@@ -33,6 +33,13 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { firstName, lastName, email, website } = body ?? {};
 
+    // Where the signup came from. Whitelisted so the column can't be filled
+    // with arbitrary text by anyone posting to this endpoint directly.
+    const SOURCES = ["checklist", "newsletter", "workbook", "footer"];
+    const source = SOURCES.includes(String(body?.source))
+      ? String(body.source)
+      : "checklist";
+
     // Honeypot: real people never fill a hidden field. Pretend success so
     // bots don't learn they were caught.
     if (website) return NextResponse.json({ ok: true });
@@ -53,18 +60,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const { subscriber, isNew } = upsertSubscriber({
+    const { subscriber, isNew } = await upsertSubscriber({
       email: cleanEmail,
       firstName: String(firstName),
       lastName: lastName ? String(lastName) : undefined,
-      source: "checklist",
+      source,
     });
 
     const downloadUrl = `/api/download/checklist?t=${subscriber.token}`;
 
     // Send email #1 immediately. A returning subscriber who already has it
     // still gets the download link back, but no duplicate email.
-    const alreadySent = sentKeysFor(subscriber.id);
+    const alreadySent = await sentKeysFor(subscriber.id);
     const first = sequence[0];
     let emailed = false;
 
@@ -72,10 +79,10 @@ export async function POST(request: Request) {
       if (mailerConfigured()) {
         try {
           await sendSequenceEmail(first, subscriber);
-          recordSend(subscriber.id, first.key, "sent");
+          await recordSend(subscriber.id, first.key, "sent");
           emailed = true;
         } catch (err) {
-          recordSend(
+          await recordSend(
             subscriber.id,
             first.key,
             "failed",

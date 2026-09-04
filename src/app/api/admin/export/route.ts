@@ -17,7 +17,7 @@ export async function GET() {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
 
-  const rows = allSubscribersWithStats();
+  const rows = await allSubscribersWithStats();
   const header = [
     "first_name",
     "last_name",

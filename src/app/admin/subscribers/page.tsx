@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { allSubscribersWithStats, stats } from "@/lib/db";
+import {
+  allSubscribersWithStats,
+  allContactSubmissions,
+  stats,
+} from "@/lib/db";
 import { sequence } from "@/lib/sequence";
 import { mailerConfigured } from "@/lib/mailer";
 import AdminLogin from "@/components/AdminLogin";
@@ -17,7 +21,7 @@ function authed() {
   return cookies().get("cca_admin")?.value === expected;
 }
 
-export default function AdminSubscribersPage() {
+export default async function AdminSubscribersPage() {
   if (!process.env.ADMIN_PASSWORD) {
     return (
       <section className="container-x py-24">
@@ -35,8 +39,11 @@ export default function AdminSubscribersPage() {
 
   if (!authed()) return <AdminLogin />;
 
-  const rows = allSubscribersWithStats();
-  const s = stats();
+  const [rows, s, inquiries] = await Promise.all([
+    allSubscribersWithStats(),
+    stats(),
+    allContactSubmissions(100),
+  ]);
 
   const tiles = [
     ["Active subscribers", s.active],
@@ -44,6 +51,7 @@ export default function AdminSubscribersPage() {
     ["Emails sent", s.emails_sent],
     ["Failed sends", s.emails_failed],
     ["Checklist downloads", s.downloads],
+    ["Contact inquiries", s.contact_submissions],
   ] as const;
 
   return (
@@ -76,7 +84,7 @@ export default function AdminSubscribersPage() {
           </div>
         )}
 
-        <div className="mt-9 grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="mt-9 grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
           {tiles.map(([label, value]) => (
             <div
               key={label}
@@ -169,9 +177,80 @@ export default function AdminSubscribersPage() {
 
         <p className="mt-6 text-[13px] text-navy/45">
           The sequence bar shows how many of the {sequence.length} emails have
-          gone out. It advances when the dispatcher runs — once an hour is
-          plenty.
+          gone out. It advances when the dispatcher runs — once a day on
+          Vercel&rsquo;s schedule.
         </p>
+
+        {/* -------------------------------------------------------------- */}
+        {/*  Contact form inquiries                                        */}
+        {/* -------------------------------------------------------------- */}
+        <h2 className="display mt-16 text-[28px] leading-tight">
+          Contact inquiries
+        </h2>
+        <p className="mt-2 text-[14px] text-navy/50">
+          Everything submitted through the contact form on /contact and /book.
+        </p>
+
+        <div className="mt-6 space-y-4">
+          {inquiries.map((q) => (
+            <article
+              key={q.id}
+              className="rounded-2xl border border-navy/10 bg-white p-6"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-[16px] font-semibold text-navy">
+                    {q.first_name} {q.last_name ?? ""}
+                  </h3>
+                  <p className="mt-1 text-[13.5px] text-navy/60">
+                    <a
+                      href={`mailto:${q.email}`}
+                      className="underline decoration-navy/20 underline-offset-4 hover:text-emerald-700"
+                    >
+                      {q.email}
+                    </a>
+                    {q.phone ? ` · ${q.phone}` : ""}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex rounded-full bg-navy/[0.06] px-3 py-1 text-[12px] font-semibold text-navy/70">
+                    {q.department}
+                  </span>
+                  <span
+                    className={`inline-flex rounded-full px-3 py-1 text-[12px] font-semibold ${
+                      q.notified
+                        ? "bg-emerald-700/10 text-emerald-800"
+                        : "bg-gold/20 text-navy/70"
+                    }`}
+                    title={q.error ?? undefined}
+                  >
+                    {q.notified ? "emailed" : "not emailed"}
+                  </span>
+                  <span className="text-[12.5px] text-navy/45">
+                    {new Date(q.created_at).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+              </div>
+              <p className="mt-4 whitespace-pre-wrap border-l-2 border-gold pl-4 text-[14.5px] leading-relaxed text-navy/75">
+                {q.message}
+              </p>
+              {q.error && (
+                <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[12.5px] text-red-700">
+                  Delivery problem: {q.error}
+                </p>
+              )}
+            </article>
+          ))}
+          {inquiries.length === 0 && (
+            <div className="rounded-2xl border border-navy/10 bg-white px-6 py-16 text-center text-[15px] text-navy/45">
+              No inquiries yet. Contact form submissions will appear here.
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );
