@@ -107,15 +107,23 @@ export async function POST(request: Request) {
     });
 
     if (!isNew) {
-      console.log(`[stripe] ${event.id} already processed — no action`);
-      return NextResponse.json({ ok: true, duplicate: true });
+      // Seen this event before. Deliberately NOT an early return: the first
+      // attempt may have recorded the purchase and then failed to send, which
+      // is exactly the case Stripe is retrying for. Falling through to the
+      // delivery check below is what lets that retry actually deliver.
+      console.log(`[stripe] ${event.id} already recorded — checking delivery`);
     }
 
-    // Recorded in `sends`, so a Stripe retry after a mail outage re-attempts
-    // delivery while a retry after success does not resend.
+    // `sends` is the idempotency guard for the EMAIL, separately from the
+    // purchase. Only successful sends are recorded as 'sent', so a retry after
+    // a mail failure re-attempts, while a retry after success does not resend.
     const alreadySent = await sentKeysFor(subscriber.id);
     if (alreadySent.includes(workbookDeliveryEmail.key)) {
-      return NextResponse.json({ ok: true, alreadyDelivered: true });
+      return NextResponse.json({
+        ok: true,
+        alreadyDelivered: true,
+        duplicate: !isNew,
+      });
     }
 
     if (!mailerConfigured()) {

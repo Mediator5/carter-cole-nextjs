@@ -46,10 +46,26 @@ import type { Subscriber } from "./db";
 
 let _transport: nodemailer.Transporter | null = null;
 
-export function mailerConfigured() {
+/** True when Resend is available. Preferred over SMTP wherever both are set. */
+export function resendConfigured() {
+  return Boolean(process.env.RESEND_API_KEY);
+}
+
+export function smtpConfigured() {
   return Boolean(
     process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS
   );
+}
+
+export function mailerConfigured() {
+  return resendConfigured() || smtpConfigured();
+}
+
+/** Which transport a send will actually use. Handy in logs and the admin page. */
+export function mailerProvider(): "resend" | "smtp" | "none" {
+  if (resendConfigured()) return "resend";
+  if (smtpConfigured()) return "smtp";
+  return "none";
 }
 
 /** How many messages we allow ourselves per rolling 24h, kept under Google's
@@ -61,7 +77,10 @@ export function dailySendLimit() {
 /** Pause between messages. Google throttles bursts; roughly one per second
  *  keeps a sequence run comfortably inside its tolerance. */
 export function sendThrottleMs() {
-  return Number(process.env.MAIL_THROTTLE_MS || 1200);
+  if (process.env.MAIL_THROTTLE_MS) return Number(process.env.MAIL_THROTTLE_MS);
+  // Resend's default rate limit is 2 requests/second, so 600ms sits just
+  // under it. Gmail wants a gentler pace than that.
+  return resendConfigured() ? 600 : 1200;
 }
 
 function transport() {
@@ -110,6 +129,79 @@ export function fromAddress() {
     process.env.SMTP_USER ||
     `Lashanda Carter <${site.email}>`
   );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Delivery                                                                  */
+/* -------------------------------------------------------------------------- */
+
+export type Message = {
+  from: string;
+  to: string;
+  replyTo?: string;
+  subject: string;
+  html?: string;
+  text?: string;
+  headers?: Record<string, string>;
+};
+
+/**
+ * Sends one message.
+ *
+ * Resend when RESEND_API_KEY is set, SMTP otherwise. Resend is preferred
+ * because it is an HTTPS API: serverless platforms frequently block or
+ * throttle outbound SMTP, and a webhook that hangs 25 seconds on an
+ * unreachable mail host gets killed by Stripe's 30-second timeout long
+ * before it can report anything useful.
+ *
+ * Throws on failure. Callers record that against the send so a retry can
+ * pick it up, rather than the failure passing silently.
+ */
+export async function deliver(msg: Message): Promise<void> {
+  if (resendConfigured()) {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: msg.from,
+        to: msg.to,
+        // The REST API uses snake_case here. The SDK's camelCase spelling is
+        // its own convention and is not accepted by this endpoint.
+        reply_to: msg.replyTo,
+        subject: msg.subject,
+        html: msg.html,
+        text: msg.text,
+        headers: msg.headers,
+      }),
+      // Fail fast rather than holding a serverless invocation open.
+      signal: AbortSignal.timeout(15_000),
+    });
+
+    if (!res.ok) {
+      let detail = "";
+      try {
+        const body = await res.json();
+        detail = body?.message || body?.name || JSON.stringify(body);
+      } catch {
+        detail = await res.text().catch(() => "");
+      }
+      throw new Error(`Resend rejected the message (${res.status}): ${detail}`);
+    }
+    return;
+  }
+
+  await transport().sendMail({
+    from: msg.from,
+    to: msg.to,
+    replyTo: msg.replyTo,
+    subject: msg.subject,
+    html: msg.html,
+    text: msg.text,
+    headers: msg.headers,
+  });
 }
 
 /** Small sleep used to pace bulk sends. */
@@ -287,11 +379,12 @@ export async function sendSequenceEmail(
 
   if (!mailerConfigured()) {
     throw new Error(
-      "SMTP is not configured. Set SMTP_HOST / SMTP_USER / SMTP_PASS in .env.local."
+      "No mail transport configured. Set RESEND_API_KEY (preferred), or " +
+        "SMTP_HOST / SMTP_USER / SMTP_PASS, in .env.local."
     );
   }
 
-  await transport().sendMail({
+  await deliver({
     from: fromAddress(),
     replyTo: process.env.MAIL_REPLY_TO || site.email,
     to: sub.email,
@@ -452,7 +545,7 @@ export async function sendContactNotification(
     .filter((l) => l !== null)
     .join("\n");
 
-  await transport().sendMail({
+  await deliver({
     from: fromAddress(),
     to: routedTo,
     replyTo: payload.email,
@@ -523,7 +616,7 @@ Carter Cole & Associates
 ${site.address.street}, ${site.address.city}, ${site.address.state} ${site.address.zip}
 `;
 
-  await transport().sendMail({
+  await deliver({
     from: fromAddress(),
     replyTo: process.env.MAIL_REPLY_TO || site.email,
     to: payload.email,
