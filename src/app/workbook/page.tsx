@@ -20,12 +20,21 @@ export const metadata: Metadata = {
 };
 
 /**
- * Checkout is not wired yet. Put your Stripe Payment Link, Gumroad URL, or
- * other checkout here and every button on this page goes live at once.
- * Leave it empty and the buttons become a clearly-labelled waitlist prompt
- * rather than a dead link.
+ * The Stripe Payment Link, read from STRIPE_PAYMENT_LINK_WORKBOOK.
+ *
+ * This is a server component, so the value is read at render time on the
+ * server — which means changing the link is an environment-variable change
+ * and a redeploy, with no code edit and nothing to keep in sync.
+ *
+ * It is NOT prefixed NEXT_PUBLIC_ because it doesn't need to be: the value
+ * ends up in the rendered HTML either way (it's a button's href, and public
+ * by nature), and keeping the prefix off avoids implying that any other
+ * Stripe value would be safe to expose.
+ *
+ * While it's empty every buy button falls back to the free checklist with a
+ * clear label, rather than becoming a dead link.
  */
-const CHECKOUT_URL = "";
+const CHECKOUT_URL: string = process.env.STRIPE_PAYMENT_LINK_WORKBOOK ?? "";
 
 const parts = [
   {

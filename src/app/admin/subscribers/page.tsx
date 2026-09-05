@@ -50,7 +50,15 @@ export default async function AdminSubscribersPage() {
     ["Unsubscribed", s.unsubscribed],
     ["Emails sent", s.emails_sent],
     ["Failed sends", s.emails_failed],
-    ["Checklist downloads", s.downloads],
+    ["Downloads", s.downloads],
+    ["Workbook sales", s.purchases],
+    [
+      "Revenue",
+      `$${((s.revenue_cents ?? 0) / 100).toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`,
+    ],
     ["Contact inquiries", s.contact_submissions],
   ] as const;
 

@@ -27,6 +27,17 @@ export type Subscriber = {
 export type SubscriberRow = Subscriber & {
   sent_count: number;
   download_count: number;
+  purchase_count: number;
+};
+
+export type Purchase = {
+  id: number;
+  stripe_event_id: string;
+  subscriber_id: number;
+  product: string;
+  amount_cents: number | null;
+  currency: string | null;
+  created_at: string;
 };
 
 export type ContactSubmission = {
@@ -268,6 +279,62 @@ export async function recordDownload(subscriberId: number, asset: string) {
 }
 
 /* -------------------------------------------------------------------------- */
+/*  Purchases                                                                 */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Records a completed Stripe checkout, keyed on the Stripe event id.
+ *
+ * Stripe does not guarantee once-only webhook delivery — it retries for up to
+ * three days on any non-2xx, and can send the same event twice anyway. The
+ * unique index on stripe_event_id is what makes a second delivery harmless.
+ *
+ * @returns isNew=false when this exact event has already been processed, so
+ *          the caller knows not to send a second delivery email.
+ */
+export async function recordPurchase(input: {
+  eventId: string;
+  subscriberId: number;
+  product: string;
+  amountCents?: number | null;
+  currency?: string | null;
+}): Promise<{ isNew: boolean }> {
+  const { error } = await supabase().from("purchases").insert({
+    stripe_event_id: input.eventId,
+    subscriber_id: input.subscriberId,
+    product: input.product,
+    amount_cents: input.amountCents ?? null,
+    currency: input.currency ?? null,
+  });
+
+  if (error) {
+    // 23505 = unique violation: we have seen this event before. That is the
+    // expected outcome of a retry, not a failure.
+    if (error.code === "23505") return { isNew: false };
+    throw new Error(`Could not record purchase: ${error.message}`);
+  }
+
+  return { isNew: true };
+}
+
+/** True when this subscriber has paid for this product. Gates the download. */
+export async function hasPurchased(subscriberId: number, product: string) {
+  const { data, error } = await supabase()
+    .from("purchases")
+    .select("id")
+    .eq("subscriber_id", subscriberId)
+    .eq("product", product)
+    .limit(1);
+
+  if (error) {
+    // Fail closed. A database hiccup must never hand out a paid product.
+    console.error("[db] hasPurchased failed:", error.message);
+    return false;
+  }
+  return (data?.length ?? 0) > 0;
+}
+
+/* -------------------------------------------------------------------------- */
 /*  Contact submissions                                                       */
 /* -------------------------------------------------------------------------- */
 
@@ -351,7 +418,7 @@ export async function stats() {
   const db = supabase();
   const head = { count: "exact" as const, head: true };
 
-  const [active, unsubscribed, sent, failed, downloads, contacts] =
+  const [active, unsubscribed, sent, failed, downloads, contacts, purchases] =
     await Promise.all([
       db.from("subscribers").select("*", head).eq("status", "active"),
       db.from("subscribers").select("*", head).eq("status", "unsubscribed"),
@@ -359,7 +426,16 @@ export async function stats() {
       db.from("sends").select("*", head).eq("status", "failed"),
       db.from("downloads").select("*", head),
       db.from("contact_submissions").select("*", head),
+      db.from("purchases").select("*", head),
     ]);
+
+  // Revenue is summed separately: a head/count query returns no rows to add up.
+  const { data: amounts } = await db.from("purchases").select("amount_cents");
+  const revenueCents = (amounts ?? []).reduce(
+    (total: number, row: { amount_cents: number | null }) =>
+      total + (row.amount_cents ?? 0),
+    0
+  );
 
   return {
     active: active.count ?? 0,
@@ -368,5 +444,7 @@ export async function stats() {
     emails_failed: failed.count ?? 0,
     downloads: downloads.count ?? 0,
     contact_submissions: contacts.count ?? 0,
+    purchases: purchases.count ?? 0,
+    revenue_cents: revenueCents,
   };
 }

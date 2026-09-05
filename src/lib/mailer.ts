@@ -126,6 +126,9 @@ function linksFor(sub: Subscriber) {
   return {
     checklist: `${base}/api/download/checklist?t=${sub.token}`,
     workbook: `${base}/workbook?ref=${sub.token}`,
+    // The paid download. Same token, but the route also checks a purchase
+    // exists, so knowing a token is not enough to get the workbook.
+    workbookDownload: `${base}/api/download/workbook?t=${sub.token}`,
     unsubscribe: `${base}/api/unsubscribe?t=${sub.token}`,
   };
 }
@@ -135,6 +138,9 @@ function fill(text: string, sub: Subscriber) {
   return text
     .replace(/\{\{name\}\}/g, sub.first_name)
     .replace(/\{\{checklist\}\}/g, l.checklist)
+    // Must come before {{workbook}}: the shorter token would otherwise
+    // match first and leave a stray "Download" behind.
+    .replace(/\{\{workbookDownload\}\}/g, l.workbookDownload)
     .replace(/\{\{workbook\}\}/g, l.workbook)
     .replace(/\{\{unsubscribe\}\}/g, l.unsubscribe);
 }
@@ -187,7 +193,11 @@ function renderBlocks(body: string[], sub: Subscriber) {
     .join("\n");
 }
 
-export function renderEmail(email: SequenceEmail, sub: Subscriber) {
+export function renderEmail(
+  email: SequenceEmail,
+  sub: Subscriber,
+  opts: { reason?: string } = {}
+) {
   const l = linksFor(sub);
   const subject = fill(email.subject, sub);
   const preheader = fill(email.preheader, sub);
@@ -234,7 +244,10 @@ export function renderEmail(email: SequenceEmail, sub: Subscriber) {
         <a href="mailto:${site.email}" style="color:${MUTED}">${site.email}</a>
       </p>
       <p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#94a0b0">
-        You're receiving this because you downloaded the Foundation Checklist at ${siteUrl().replace(
+        ${escapeHtml(
+          opts.reason ??
+            "You're receiving this because you downloaded the Foundation Checklist"
+        )} at ${siteUrl().replace(
           /^https?:\/\//,
           ""
         )}.<br>
@@ -265,8 +278,12 @@ export function renderEmail(email: SequenceEmail, sub: Subscriber) {
   return { subject, html, text, unsubscribeUrl: l.unsubscribe };
 }
 
-export async function sendSequenceEmail(email: SequenceEmail, sub: Subscriber) {
-  const { subject, html, text, unsubscribeUrl } = renderEmail(email, sub);
+export async function sendSequenceEmail(
+  email: SequenceEmail,
+  sub: Subscriber,
+  opts: { reason?: string } = {}
+) {
+  const { subject, html, text, unsubscribeUrl } = renderEmail(email, sub, opts);
 
   if (!mailerConfigured()) {
     throw new Error(
