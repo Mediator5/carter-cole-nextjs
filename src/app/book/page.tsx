@@ -223,11 +223,12 @@ export default function BookPage() {
                   hear back within two business days.
                 </p>
                 <div className="mt-8 flex flex-wrap justify-center gap-3">
+                  {/* One number, one button. The second button used to be a
+                      separate tax-division line; now that everything publishes
+                      the business line, two buttons with the same number just
+                      made the choice look harder than it is. */}
                   <a href={site.phoneHref} className="btn-primary">
                     Call {site.phone}
-                  </a>
-                  <a href={site.taxPhoneHref} className="btn-ghost">
-                    Tax division: {site.taxPhone}
                   </a>
                   <Link href="#inquiry" className="btn-ghost">
                     Send an inquiry
@@ -305,15 +306,18 @@ export default function BookPage() {
                   {site.email}
                 </a>
               </p>
+              {/* One business line answers for both divisions, so this block
+                  carries the tax inbox instead of printing the same number a
+                  second line down. */}
               <p>
                 <span className="block text-[12px] uppercase tracking-wide text-white/40">
                   SmartTaxIQ tax division
                 </span>
                 <a
-                  href={site.taxPhoneHref}
+                  href={`mailto:${site.taxEmail}`}
                   className="text-white hover:text-gold-300"
                 >
-                  {site.taxPhone}
+                  {site.taxEmail}
                 </a>
               </p>
               <p>{site.hours}</p>

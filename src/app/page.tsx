@@ -165,8 +165,8 @@ export default function HomePage() {
             <Link href="/smarttaxiq" className="btn-gold text-[13.5px]">
               Explore SmartTaxIQ
             </Link>
-            <a href={site.taxPhoneHref} className="btn-ghost-light text-[13.5px]">
-              {site.taxPhone}
+            <a href={site.phoneHref} className="btn-ghost-light text-[13.5px]">
+              {site.phone}
             </a>
           </div>
         </div>

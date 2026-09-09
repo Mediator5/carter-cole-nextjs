@@ -16,9 +16,22 @@ export const site = {
   url: "https://cartercoleandassociates.com",
   founder: "Lashanda Carter",
   founded: 2003,
-  phone: "800-599-2880",
-  phoneHref: "tel:+18005992880",
+  /**
+   * The business line. This is the number that appears everywhere public and
+   * in the schema markup, and it must stay character-identical to the Google
+   * Business Profile and to the SmartTaxIQ site — inconsistent name/address/
+   * phone is one of the few things that measurably suppresses local ranking,
+   * and it is the number paid traffic will be dialling.
+   */
+  phone: "313-771-4400",
+  phoneHref: "tel:+13137714400",
   email: "info@cartercoleandassociates.com",
+  /**
+   * Lashanda's direct line. Kept for clients who already have it and expect to
+   * reach her personally, but deliberately NOT the number in the schema markup
+   * or on the SmartTaxIQ site: once ads are running, the business line is what
+   * should absorb calls from strangers at unpredictable hours.
+   */
   taxPhone: "810-493-6605",
   taxPhoneHref: "tel:+18104936605",
   taxEmail: "lashanda@smarttaxiq.com",

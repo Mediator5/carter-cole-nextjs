@@ -8,17 +8,21 @@ import ContactForm from "@/components/ContactForm";
 export const metadata: Metadata = {
   title: "Contact",
   description:
-    "Contact Carter Cole & Associates in Detroit. Main office 800-599-2880, SmartTaxIQ tax division 810-493-6605. Every inquiry answered within 2 business days.",
+    "Contact Carter Cole & Associates LLC in Detroit. Call 313-771-4400 for tax, credit, business formation and bookkeeping. Every inquiry answered within 2 business days.",
   alternates: { canonical: "/contact" },
 };
 
+// Every department publishes the one business line. A visitor deciding which
+// of four numbers to ring is a visitor who rings none of them — and a single
+// published number is also what keeps the Google Business Profile, the schema
+// markup and both websites saying the same thing.
 const departments = [
   {
     name: "SmartTaxIQ — Tax division",
     detail: "Preparation, strategy, amended returns, IRS notices",
-    phone: site.taxPhone,
-    phoneHref: site.taxPhoneHref,
-    email: site.email,
+    phone: site.phone,
+    phoneHref: site.phoneHref,
+    email: site.taxEmail,
   },
   {
     name: "Credit repair & building",

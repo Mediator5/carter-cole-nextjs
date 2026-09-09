@@ -112,7 +112,7 @@ export default function TaxFormTabs({ height = 1100 }: { height?: number }) {
         >
           Open it in a new tab
         </a>{" "}
-        or call {site.taxPhone}.
+        or call {site.phone}.
       </p>
     </div>
   );

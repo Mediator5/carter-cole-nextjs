@@ -106,7 +106,9 @@ const jsonLd = {
     name: site.dba,
     description: `${site.dba} is the tax division of ${site.legalName}.`,
     url: `${site.url}/smarttaxiq`,
-    telephone: site.taxPhone,
+    // The business line, not the direct line. Publishing two numbers for one
+    // business gives Google two things to reconcile and weakens both.
+    telephone: site.phone,
     email: site.taxEmail,
     parentOrganization: { "@type": "Organization", name: site.legalName },
   },

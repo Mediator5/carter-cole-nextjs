@@ -81,8 +81,14 @@ export default function Footer() {
               </a>
             </li>
             <li>
+              {/*
+                Relabelled when the business line became the main number. This
+                is Lashanda's direct line, not a second switchboard — calling
+                it "SmartTaxIQ (tax division)" alongside a business line that
+                also handles tax would just make a visitor guess which to ring.
+              */}
               <span className="block text-[12px] uppercase tracking-wide text-white/40">
-                SmartTaxIQ (tax division)
+                Direct line
               </span>
               <a
                 href={site.taxPhoneHref}

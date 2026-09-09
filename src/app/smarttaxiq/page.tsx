@@ -148,8 +148,8 @@ export default function SmartTaxIQPage() {
                 <Link href="/book" className="btn-ghost-light">
                   Book a Discovery Session
                 </Link>
-                <a href={site.taxPhoneHref} className="btn-ghost-light">
-                  Call {site.taxPhone}
+                <a href={site.phoneHref} className="btn-ghost-light">
+                  Call {site.phone}
                 </a>
               </div>
             </Reveal>
@@ -381,7 +381,7 @@ export default function SmartTaxIQPage() {
               >
                 Book a free 30-minute discovery session
               </Link>{" "}
-              or call {site.taxPhone}.
+              or call {site.phone}.
             </p>
           </Reveal>
         </div>

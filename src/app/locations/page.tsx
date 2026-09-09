@@ -99,15 +99,23 @@ export default function LocationsPage() {
                   <span className="text-[12px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
                     SmartTaxIQ
                   </span>
+                  {/* Both divisions answer on the one business line, so this
+                      card carries the tax inbox rather than repeating the same
+                      number back at the reader as if it were a second one. */}
                   <p className="mt-3 text-[16px] leading-relaxed">
                     <a
-                      href={site.taxPhoneHref}
+                      href={site.phoneHref}
                       className="font-semibold text-navy hover:text-emerald-700"
                     >
-                      {site.taxPhone}
+                      {site.phone}
                     </a>
                     <br />
-                    <span className="text-navy/70">Tax division direct line</span>
+                    <a
+                      href={`mailto:${site.taxEmail}`}
+                      className="text-navy/70 hover:text-emerald-700"
+                    >
+                      {site.taxEmail}
+                    </a>
                   </p>
                   <p className="mt-3 text-[13px] text-navy/45">
                     Preparation, strategy, IRS notices.
