@@ -4,7 +4,12 @@ import { sequence } from "@/lib/sequence";
 import { sendSequenceEmail, mailerConfigured } from "@/lib/mailer";
 import { syncToAudience } from "@/lib/audience";
 import { notifyNewLead } from "@/lib/notify";
-import { readAttribution, BRAND_TAG, BRAND_NAME } from "@/lib/leads";
+import {
+  readAttribution,
+  settleWithin,
+  BRAND_TAG,
+  BRAND_NAME,
+} from "@/lib/leads";
 
 export const dynamic = "force-dynamic";
 
@@ -88,12 +93,15 @@ export async function POST(request: Request) {
 
     const downloadUrl = `/api/download/checklist?t=${subscriber.token}`;
 
-    // Mirror to the Resend audience and alert the office. Both are
-    // fire-and-forget against the response: the subscriber row and the
-    // download link already exist, so neither a Resend outage nor a
-    // Twilio outage can cost the lead or make the visitor wait.
+    // Mirror to the mailing list and alert the office.
+    //
+    // Awaited, not fired and forgotten: on serverless hosting the function is
+    // torn down the moment this handler returns, and an un-awaited promise is
+    // abandoned mid-flight — which is exactly how a signup succeeds while the
+    // contact never reaches Mailchimp. Bounded so a slow third party cannot
+    // leave the visitor waiting.
     const utm = readAttribution(body?.attribution);
-    void Promise.allSettled([
+    await settleWithin(4000, [
       syncToAudience({
         email: cleanEmail,
         firstName: String(firstName),

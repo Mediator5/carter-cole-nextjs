@@ -8,7 +8,12 @@ import {
 } from "@/lib/mailer";
 import { syncToAudience } from "@/lib/audience";
 import { notifyNewLead } from "@/lib/notify";
-import { readAttribution, BRAND_TAG, BRAND_NAME } from "@/lib/leads";
+import {
+  readAttribution,
+  settleWithin,
+  BRAND_TAG,
+  BRAND_NAME,
+} from "@/lib/leads";
 
 export const dynamic = "force-dynamic";
 
@@ -143,7 +148,7 @@ export async function POST(request: Request) {
     // marketing — subscribing someone who did not ask is how a domain earns
     // spam complaints and loses deliverability for everyone else.
     const utm = readAttribution(body?.attribution);
-    void Promise.allSettled([
+    await settleWithin(4000, [
       notifyNewLead({
         kind: "contact",
         name: [firstName, lastName].filter(Boolean).join(" "),
