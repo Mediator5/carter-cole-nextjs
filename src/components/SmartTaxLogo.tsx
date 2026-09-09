@@ -12,11 +12,17 @@ export default function SmartTaxLogo({
   width = 240,
   className = "",
   priority = false,
+  decorative = false,
 }: {
   variant?: "dark" | "light";
   width?: number;
   className?: string;
   priority?: boolean;
+  /**
+   * Set when the brand name is already spelled out in adjacent text. The mark
+   * then carries an empty alt so assistive tech reads the name once, not twice.
+   */
+  decorative?: boolean;
 }) {
   return (
     <Image
@@ -25,7 +31,7 @@ export default function SmartTaxLogo({
           ? "/images/smarttaxiq-logo-light.png"
           : "/images/smarttaxiq-logo.png"
       }
-      alt="SmartTaxIQ"
+      alt={decorative ? "" : "SmartTaxIQ"}
       width={width}
       height={Math.round(width * RATIO)}
       priority={priority}

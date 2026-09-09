@@ -41,21 +41,16 @@ Node 22.5+ required (the funnel uses Node's built-in SQLite when `better-sqlite3
 
 ## Things to fill in before launch
 
-### 1. The Detroit address
+### 1. The Detroit address — done
 
-`src/lib/site.ts` → `site.address`. Currently a placeholder:
+`src/lib/site.ts` → `site.address` is set to
+**14701 Mack Ave, Suite B, Detroit, MI 48215**, and derived from there into
+the contact page, the locations page, every commercial email footer (CAN-SPAM
+requires it) and the local-business schema.
 
-```ts
-address: {
-  street: "[Address to be confirmed]",
-  city: "Detroit",
-  state: "MI",
-  zip: "[ZIP]",
-}
-```
-
-This address also feeds the local-business schema in `src/app/layout.tsx`,
-which matters for local SEO — worth setting correctly.
+It must stay character-identical to the SmartTaxIQ site and to the Google
+Business Profile — mismatched name/address/phone is one of the few things that
+measurably suppresses local ranking.
 
 ### 2. JotForm — scheduling form (the tax forms are already live)
 
@@ -87,6 +82,38 @@ has commented example code and a department→inbox routing map at the top.
 
 `src/lib/site.ts` → `site.url`. Used for canonical tags, OpenGraph and the
 sitemap.
+
+---
+
+## The lead system
+
+Both websites feed one Mailchimp audience and one set of instant alerts.
+Supabase remains the system of record; Mailchimp is the broadcast copy. The
+list layer has two interchangeable backends — Mailchimp and Resend — and uses
+whichever is configured, so changing campaign tools is an environment change
+rather than a code change. The whole thing is credential-gated: with nothing configured the site runs exactly
+as it always did, and each value added switches on one more part of it with no
+code change.
+
+| Piece | Where |
+| --- | --- |
+| Email capture (every major page) | `src/components/LeadCapture.tsx` |
+| Capture endpoint | `POST /api/subscribe` |
+| Contact form | `POST /api/contact` |
+| JotForm intake webhook | `POST /api/webhooks/jotform` |
+| Calendly booking webhook | `POST /api/webhooks/calendly` |
+| Mailing list (Mailchimp) | `src/lib/audience/` |
+| Email + SMS alerts | `src/lib/notify.ts` |
+| One capture path for all of it | `src/lib/leads.ts` |
+| Analytics, attribution, conversions | `src/lib/analytics.ts` |
+| Scheduler embed | `src/components/CalendlyEmbed.tsx` |
+
+**Setup, value by value: [`LEAD-SYSTEM-SETUP.md`](./LEAD-SYSTEM-SETUP.md).**
+
+The design rule throughout is that storage happens first and every third party
+after it, independently guarded. A Mailchimp outage cannot stop an alert, a
+Twilio outage cannot stop the storage, and no third party can fail a form
+submission for the visitor. A mail outage costs you the email, never the lead.
 
 ---
 

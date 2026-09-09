@@ -112,13 +112,26 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="container-x flex flex-col items-center justify-between gap-3 py-6 text-[13px] text-white/50 sm:flex-row">
+        <div className="container-x flex flex-col items-center justify-between gap-4 py-6 text-[13px] text-white/50 sm:flex-row">
           <p>
-            © {new Date().getFullYear()} {site.name}. All rights reserved.
+            © {new Date().getFullYear()} {site.legalName}. All rights reserved.
           </p>
-          <span className="flex items-center gap-2.5">
-            <SmartTaxLogo variant="light" width={120} className="w-[120px]" />
-            <span>is the tax division of {site.name}.</span>
+          {/*
+            The division statement is real text, not only the logo mark. The
+            mark alone left the sentence starting mid-air for anyone with
+            images off, for screen readers, and for Google — which is the one
+            reader that most needs to connect the two brands.
+          */}
+          <span className="flex flex-col items-center gap-2.5 sm:flex-row">
+            <SmartTaxLogo
+              variant="light"
+              width={120}
+              className="w-[120px] shrink-0"
+              decorative
+            />
+            <span className="text-center sm:text-left">
+              {site.dba} is the tax division of {site.legalName}.
+            </span>
           </span>
         </div>
       </div>

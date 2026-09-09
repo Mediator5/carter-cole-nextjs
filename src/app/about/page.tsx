@@ -6,6 +6,7 @@ import Reveal from "@/components/Reveal";
 import { PageHero, SectionHeading } from "@/components/Section";
 import Testimonials from "@/components/Testimonials";
 import CTA from "@/components/CTA";
+import LeadCapture from "@/components/LeadCapture";
 
 export const metadata: Metadata = {
   title: "About Lashanda Carter, Founder",
@@ -227,6 +228,10 @@ export default function AboutPage() {
       </section>
 
       <Testimonials limit={6} />
+      <LeadCapture
+        source="about"
+      />
+
       <CTA
         title="Let's talk about what you're building"
         image="/images/lashanda-gold-gown.jpg"

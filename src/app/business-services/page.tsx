@@ -4,6 +4,7 @@ import Link from "next/link";
 import Reveal from "@/components/Reveal";
 import { PageHero, SectionHeading } from "@/components/Section";
 import CTA from "@/components/CTA";
+import LeadCapture from "@/components/LeadCapture";
 
 export const metadata: Metadata = {
   title: "Business Services",
@@ -253,6 +254,12 @@ export default function BusinessServicesPage() {
           </Reveal>
         </div>
       </section>
+
+      <LeadCapture
+        source="business-services"
+        heading="Get the free checklist sent straight to your inbox"
+        blurb="Every registration, filing and number a new Michigan business needs in place — in the order they need them. Free, and yours in about ten seconds."
+      />
 
       <CTA
         title="Let's get your business set up right"

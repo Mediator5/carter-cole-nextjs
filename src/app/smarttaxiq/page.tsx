@@ -7,6 +7,7 @@ import { SectionHeading } from "@/components/Section";
 import Accordion, { type FaqItem } from "@/components/Accordion";
 import SmartTaxLogo from "@/components/SmartTaxLogo";
 import CTA from "@/components/CTA";
+import LeadCapture from "@/components/LeadCapture";
 
 export const metadata: Metadata = {
   title: "SmartTaxIQ — Tax Division",
@@ -401,6 +402,12 @@ export default function SmartTaxIQPage() {
           </Reveal>
         </div>
       </section>
+
+      <LeadCapture
+        source="smarttaxiq"
+        heading="Tax deadlines and savings, sent before you need them"
+        blurb="The Foundation Checklist plus the reminders that matter — quarterly dates, document lists and the deductions people miss. Free, straight to your inbox."
+      />
 
       <CTA
         title="Ready to file with someone who actually reads your return?"

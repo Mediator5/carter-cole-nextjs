@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { site } from "./site";
+import { site, addressLine } from "./site";
 import type { SequenceEmail } from "./sequence";
 import type { Subscriber } from "./db";
 
@@ -323,12 +323,12 @@ export function renderEmail(
     <tr><td style="padding:0 34px 34px">
       <div style="height:1px;background:#e6e2da;margin-bottom:20px"></div>
       <p style="margin:0 0 6px;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:${MUTED}">
-        <strong style="color:${NAVY}">Carter Cole &amp; Associates</strong> &mdash; tax, credit, business formation and bookkeeping.<br>
-        SmartTaxIQ is our tax division.
+        <strong style="color:${NAVY}">Carter Cole &amp; Associates LLC</strong> &mdash; tax, credit, business formation and bookkeeping.<br>
+        SmartTaxIQ is the tax division of Carter Cole &amp; Associates LLC.
       </p>
       <!-- CAN-SPAM requires a physical postal address in commercial email. -->
       <p style="margin:0 0 14px;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:${MUTED}">
-        ${site.address.street}, ${site.address.city}, ${site.address.state} ${site.address.zip}<br>
+        ${addressLine}<br>
         <a href="tel:${site.phone.replace(
           /\D/g,
           ""
@@ -365,7 +365,7 @@ export function renderEmail(
         return line;
       })
       .join("\n\n") +
-    `\n\n---\nCarter Cole & Associates\n${site.address.street}, ${site.address.city}, ${site.address.state} ${site.address.zip}\n${site.phone}\nUnsubscribe: ${l.unsubscribe}\n`;
+    `\n\n---\n${site.legalName}\nSmartTaxIQ is the tax division of ${site.legalName}.\n${addressLine}\n${site.phone}\nUnsubscribe: ${l.unsubscribe}\n`;
 
   return { subject, html, text, unsubscribeUrl: l.unsubscribe };
 }
@@ -467,8 +467,9 @@ function row(label: string, value: string) {
 }
 
 const officeFooter = `<p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:${MUTED}">
-  <strong style="color:${NAVY}">Carter Cole &amp; Associates</strong> &mdash; tax, credit, business formation and bookkeeping.<br>
-  ${site.address.street}, ${site.address.city}, ${site.address.state} ${site.address.zip}<br>
+  <strong style="color:${NAVY}">Carter Cole &amp; Associates LLC</strong> &mdash; tax, credit, business formation and bookkeeping.<br>
+  SmartTaxIQ is the tax division of Carter Cole &amp; Associates LLC.<br>
+  ${addressLine}<br>
   <a href="tel:${site.phone.replace(/\D/g, "")}" style="color:${MUTED}">${
   site.phone
 }</a> &middot; <a href="mailto:${site.email}" style="color:${MUTED}">${
@@ -612,8 +613,8 @@ ${payload.message}
 If it's urgent, call us at ${site.phone}.
 
 — Lashanda Carter
-Carter Cole & Associates
-${site.address.street}, ${site.address.city}, ${site.address.state} ${site.address.zip}
+${site.legalName}
+${addressLine}
 `;
 
   await deliver({

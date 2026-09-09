@@ -6,6 +6,7 @@ import { SectionHeading } from "@/components/Section";
 import Testimonials from "@/components/Testimonials";
 import CTA from "@/components/CTA";
 import SmartTaxLogo from "@/components/SmartTaxLogo";
+import LeadCapture from "@/components/LeadCapture";
 
 const steps = [
   {
@@ -405,6 +406,10 @@ export default function HomePage() {
       </section>
 
       <Testimonials limit={3} />
+      <LeadCapture
+        source="home"
+      />
+
       <CTA />
     </>
   );

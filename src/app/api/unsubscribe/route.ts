@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { unsubscribe, getSubscriberByToken } from "@/lib/db";
+import { unsubscribeFromAudience } from "@/lib/audience";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,10 @@ async function handle(token: string | null) {
   }
 
   await unsubscribe(token);
+  // Keep the broadcast list in step. If the two drift, someone who opted out
+  // here still receives the next broadcast — which is both a complaint and,
+  // for commercial email, a legal problem.
+  void unsubscribeFromAudience(sub.email);
   return page(
     "You're unsubscribed",
     `${sub.email} has been removed and won't receive any more emails from us. The checklist is still yours to keep.`,

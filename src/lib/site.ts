@@ -1,5 +1,14 @@
 export const site = {
   name: "Carter Cole & Associates",
+  /**
+   * The registered legal entity. Use this — not `name` — anywhere the legal
+   * identity is being stated: copyright lines, schema markup, email footers,
+   * terms. The trading name and the legal name are deliberately separate
+   * values so one can change without dragging the other with it.
+   */
+  legalName: "Carter Cole & Associates LLC",
+  /** The tax division trades under this name. */
+  dba: "SmartTaxIQ",
   shortName: "Carter Cole",
   tagline: "Clarity. Transformation. Legacy.",
   description:
@@ -16,11 +25,21 @@ export const site = {
   hours: "Monday – Thursday, 9:30am – 5:00pm ET",
   city: "Detroit, Michigan",
   address: {
-    street: "[Address to be confirmed]",
+    street: "14701 Mack Ave",
+    suite: "Suite B",
     city: "Detroit",
     state: "MI",
-    zip: "[ZIP]",
+    zip: "48215",
+    country: "US",
   },
+  /**
+   * Google Business Profile review link. Identical on both sites — the same
+   * profile serves the practice under either brand, and splitting reviews
+   * across two profiles would halve the social proof on each.
+   */
+  googleReviewUrl: "https://g.page/r/CffT2ZqKpzmfECE/review",
+  /** The same profile without the review prompt — for "find us" / map links. */
+  googleMapsUrl: "https://g.page/r/CffT2ZqKpzmfECE",
   jotform: {
     // Live SmartTaxIQ intake forms.
     personalTax: "https://form.jotform.com/253275423934056", // Personal & Schedule C combined
@@ -30,7 +49,35 @@ export const site = {
     // consultation route runs through the inquiry form and phone.
     consultation: "",
   },
+  /**
+   * Calendly booking link for the free 30-minute consultation.
+   *
+   * The live link is the default, so the scheduler works on a fresh checkout
+   * with no environment set up at all. NEXT_PUBLIC_CALENDLY_URL overrides it
+   * per deployment — useful for pointing a staging build at a test event
+   * rather than putting real bookings in the calendar.
+   *
+   * Availability (Mon–Thu 9:30–5:00 ET) is configured in Calendly itself, not
+   * here: the event's schedule belongs with the calendar that has to honour
+   * it, and duplicating those hours in code would only let them drift.
+   */
+  calendlyUrl:
+    process.env.NEXT_PUBLIC_CALENDLY_URL ??
+    "https://calendly.com/lashandasmarttaxiq/30min",
 } as const;
+
+/**
+ * Address helpers. CAN-SPAM requires a physical postal address in every
+ * commercial email, local SEO requires the identical string everywhere it
+ * appears, and both are easy to get subtly wrong by hand — so they are
+ * derived here once and imported rather than retyped.
+ */
+
+/** "14701 Mack Ave, Suite B" */
+export const streetLine = `${site.address.street}, ${site.address.suite}`;
+
+/** "14701 Mack Ave, Suite B, Detroit, MI 48215" — the canonical one-line NAP. */
+export const addressLine = `${streetLine}, ${site.address.city}, ${site.address.state} ${site.address.zip}`;
 
 export const nav = [
   { label: "Home", href: "/" },

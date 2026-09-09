@@ -10,7 +10,8 @@ import "@fontsource/cormorant-garamond/700.css";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { site } from "@/lib/site";
+import Analytics from "@/components/Analytics";
+import { site, streetLine } from "@/lib/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
@@ -48,26 +49,67 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
+/**
+ * Local business schema.
+ *
+ * `AccountingService` is a subtype of `LocalBusiness`, so this satisfies every
+ * LocalBusiness requirement while telling Google specifically what kind of
+ * business this is — which is worth more in local results than the generic
+ * type. The name, address and phone here must match the SmartTaxIQ site and
+ * the Google Business Profile character for character; inconsistent NAP is one
+ * of the few things that measurably suppresses local ranking.
+ */
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "AccountingService",
+  "@id": `${site.url}/#organization`,
   name: site.name,
-  alternateName: "SmartTaxIQ",
+  legalName: site.legalName,
+  alternateName: [site.dba, site.legalName],
   description: site.description,
   url: site.url,
   telephone: site.phone,
   email: site.email,
   founder: { "@type": "Person", name: site.founder },
   foundingDate: String(site.founded),
-  areaServed: { "@type": "City", name: "Detroit" },
+  areaServed: [
+    { "@type": "City", name: "Detroit" },
+    { "@type": "State", name: "Michigan" },
+    { "@type": "Country", name: "United States" },
+  ],
   address: {
     "@type": "PostalAddress",
-    addressLocality: "Detroit",
-    addressRegion: "MI",
-    addressCountry: "US",
+    streetAddress: streetLine,
+    addressLocality: site.address.city,
+    addressRegion: site.address.state,
+    postalCode: site.address.zip,
+    addressCountry: site.address.country,
   },
-  openingHours: "Mo-Th 09:30-17:00",
+  geo: {
+    "@type": "GeoCoordinates",
+    latitude: 42.3853,
+    longitude: -82.9401,
+  },
+  hasMap: site.googleMapsUrl,
+  openingHoursSpecification: [
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday"],
+      opens: "09:30",
+      closes: "17:00",
+    },
+  ],
   priceRange: "$$",
+  currenciesAccepted: "USD",
+  department: {
+    "@type": "AccountingService",
+    name: site.dba,
+    description: `${site.dba} is the tax division of ${site.legalName}.`,
+    url: `${site.url}/smarttaxiq`,
+    telephone: site.taxPhone,
+    email: site.taxEmail,
+    parentOrganization: { "@type": "Organization", name: site.legalName },
+  },
   serviceType: [
     "Tax Preparation",
     "Tax Strategy",
@@ -96,6 +138,7 @@ export default function RootLayout({
         <Header />
         <main id="main">{children}</main>
         <Footer />
+        <Analytics />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

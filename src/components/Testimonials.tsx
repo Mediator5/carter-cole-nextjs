@@ -1,6 +1,7 @@
 import { testimonials } from "@/lib/site";
 import Reveal from "./Reveal";
 import { SectionHeading } from "./Section";
+import GoogleReviews from "./GoogleReviews";
 
 function Stars() {
   return (
@@ -50,6 +51,15 @@ export default function Testimonials({
               </figure>
             </Reveal>
           ))}
+        </div>
+
+        {/*
+          The reviews button sits under the quotes on purpose: someone who has
+          just read three testimonials is at the exact point of wondering
+          whether they are real, and this is the answer to that question.
+        */}
+        <div className="mt-12 text-center">
+          <GoogleReviews />
         </div>
       </div>
     </section>

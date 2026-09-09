@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { upsertSubscriber, recordSend, sentKeysFor } from "@/lib/db";
 import { sequence } from "@/lib/sequence";
 import { sendSequenceEmail, mailerConfigured } from "@/lib/mailer";
+import { syncToAudience } from "@/lib/audience";
+import { notifyNewLead } from "@/lib/notify";
+import { readAttribution, BRAND_TAG, BRAND_NAME } from "@/lib/leads";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +38,23 @@ export async function POST(request: Request) {
 
     // Where the signup came from. Whitelisted so the column can't be filled
     // with arbitrary text by anyone posting to this endpoint directly.
-    const SOURCES = ["checklist", "newsletter", "workbook", "footer"];
+    const SOURCES = [
+      "checklist",
+      "newsletter",
+      "workbook",
+      "footer",
+      "inline",
+      "exit",
+      "resources",
+      "services",
+      "smarttaxiq",
+      "home",
+      "about",
+      "business-services",
+      "locations",
+      "book",
+      "contact",
+    ];
     const source = SOURCES.includes(String(body?.source))
       ? String(body.source)
       : "checklist";
@@ -68,6 +87,37 @@ export async function POST(request: Request) {
     });
 
     const downloadUrl = `/api/download/checklist?t=${subscriber.token}`;
+
+    // Mirror to the Resend audience and alert the office. Both are
+    // fire-and-forget against the response: the subscriber row and the
+    // download link already exist, so neither a Resend outage nor a
+    // Twilio outage can cost the lead or make the visitor wait.
+    const utm = readAttribution(body?.attribution);
+    void Promise.allSettled([
+      syncToAudience({
+        email: cleanEmail,
+        firstName: String(firstName),
+        lastName: lastName ? String(lastName) : undefined,
+        source,
+        tags: [
+          BRAND_TAG,
+          `source-${source}`,
+          "kind-checklist",
+          ...(utm?.utm_campaign
+            ? [`campaign-${utm.utm_campaign}`.slice(0, 90)]
+            : []),
+        ],
+      }),
+      notifyNewLead({
+        kind: source === "newsletter" ? "newsletter" : "checklist",
+        name: [firstName, lastName].filter(Boolean).join(" "),
+        email: cleanEmail,
+        page: typeof body?.page === "string" ? body.page : undefined,
+        utm,
+        brand: BRAND_NAME,
+        extra: { Source: source, Returning: isNew ? "No" : "Yes" },
+      }),
+    ]);
 
     // Send email #1 immediately. A returning subscriber who already has it
     // still gets the download link back, but no duplicate email.

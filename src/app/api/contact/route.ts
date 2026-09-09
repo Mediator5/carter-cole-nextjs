@@ -6,6 +6,9 @@ import {
   mailerConfigured,
   type ContactPayload,
 } from "@/lib/mailer";
+import { syncToAudience } from "@/lib/audience";
+import { notifyNewLead } from "@/lib/notify";
+import { readAttribution, BRAND_TAG, BRAND_NAME } from "@/lib/leads";
 
 export const dynamic = "force-dynamic";
 
@@ -134,6 +137,36 @@ export async function POST(request: Request) {
       departmentLabel: label,
       message: String(message),
     };
+
+    // Alert the office immediately, and add them to the list only if they
+    // ticked the box. A contact form is a service request, not consent to
+    // marketing — subscribing someone who did not ask is how a domain earns
+    // spam complaints and loses deliverability for everyone else.
+    const utm = readAttribution(body?.attribution);
+    void Promise.allSettled([
+      notifyNewLead({
+        kind: "contact",
+        name: [firstName, lastName].filter(Boolean).join(" "),
+        email: cleanEmail,
+        phone: phone ? String(phone) : undefined,
+        topic: label,
+        message: String(message),
+        page: typeof body?.page === "string" ? body.page : "/contact",
+        utm,
+        brand: BRAND_NAME,
+        extra: { "Routed to": inbox },
+      }),
+      body?.optIn === true
+        ? syncToAudience({
+            email: cleanEmail,
+            firstName: String(firstName),
+            lastName: lastName ? String(lastName) : undefined,
+            phone: phone ? String(phone) : undefined,
+            source: `contact-${department}`,
+            tags: [BRAND_TAG, "source-contact", `dept-${department}`],
+          })
+        : Promise.resolve(null),
+    ]);
 
     if (!mailerConfigured()) {
       console.warn(

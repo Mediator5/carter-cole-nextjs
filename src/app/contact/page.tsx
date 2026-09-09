@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { site } from "@/lib/site";
+import { site, streetLine } from "@/lib/site";
 import Reveal from "@/components/Reveal";
 import { PageHero } from "@/components/Section";
 import ContactForm from "@/components/ContactForm";
@@ -109,7 +109,7 @@ export default function ContactPage() {
               <div className="mt-8 rounded-2xl bg-navy p-7 text-white">
                 <span className="eyebrow !text-gold-300">Office</span>
                 <address className="mt-4 not-italic text-[15.5px] leading-relaxed text-white/75">
-                  {site.address.street}
+                  {streetLine}
                   <br />
                   {site.address.city}, {site.address.state} {site.address.zip}
                 </address>

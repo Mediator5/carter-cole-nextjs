@@ -5,6 +5,7 @@ import { services } from "@/lib/site";
 import Reveal from "@/components/Reveal";
 import { PageHero, SectionHeading } from "@/components/Section";
 import CTA from "@/components/CTA";
+import LeadCapture from "@/components/LeadCapture";
 
 export const metadata: Metadata = {
   title: "Services",
@@ -174,6 +175,10 @@ export default function ServicesPage() {
           </Reveal>
         </div>
       </section>
+
+      <LeadCapture
+        source="services"
+      />
 
       <CTA />
     </>

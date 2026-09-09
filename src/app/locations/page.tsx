@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { site } from "@/lib/site";
+import { site, streetLine } from "@/lib/site";
 import Reveal from "@/components/Reveal";
 import { PageHero, SectionHeading } from "@/components/Section";
 import CTA from "@/components/CTA";
+import LeadCapture from "@/components/LeadCapture";
 
 export const metadata: Metadata = {
   title: "Locations",
@@ -47,7 +48,7 @@ export default function LocationsPage() {
                     Address
                   </span>
                   <address className="mt-3 not-italic text-[16px] leading-relaxed text-navy/75">
-                    {site.address.street}
+                    {streetLine}
                     <br />
                     {site.address.city}, {site.address.state} {site.address.zip}
                   </address>
@@ -156,6 +157,10 @@ export default function LocationsPage() {
           </Reveal>
         </div>
       </section>
+
+      <LeadCapture
+        source="locations"
+      />
 
       <CTA
         title="Come see us, or don't — either works"

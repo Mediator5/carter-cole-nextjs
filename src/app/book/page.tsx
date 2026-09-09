@@ -7,6 +7,9 @@ import ContactForm from "@/components/ContactForm";
 import JotFormEmbed from "@/components/JotFormEmbed";
 import SmartTaxLogo from "@/components/SmartTaxLogo";
 import TaxFormTabs from "@/components/TaxFormTabs";
+import CalendlyEmbed from "@/components/CalendlyEmbed";
+import Testimonials from "@/components/Testimonials";
+import GoogleReviews from "@/components/GoogleReviews";
 
 export const metadata: Metadata = {
   title: "Book a Consultation",
@@ -74,6 +77,13 @@ export default function BookPage() {
         <p className="text-[14px] text-white/55">
           {site.hours} · Every inquiry answered within 2 business days.
         </p>
+        {/*
+          Proof at the top of the page someone lands on from an ad. Anyone
+          arriving here cold is deciding whether to trust the practice at all,
+          and that question is answered faster by other people's reviews than
+          by anything the page can say about itself.
+        */}
+        <GoogleReviews tone="dark" className="mt-6" />
       </PageHero>
 
       {/* Three paths */}
@@ -146,8 +156,39 @@ export default function BookPage() {
         </div>
       </section>
 
-      {/* Consultation scheduling */}
-      {site.jotform.consultation ? (
+      {/* Consultation scheduling.
+          Three states, in order of how well they convert: a live Calendly
+          calendar, a JotForm scheduling form, or the phone. The page picks the
+          best one available, so adding NEXT_PUBLIC_CALENDLY_URL upgrades this
+          section with no other edit. */}
+      {site.calendlyUrl ? (
+        <section id="schedule" className="py-20 sm:py-24">
+          <div className="container-x">
+            <SectionHeading
+              eyebrow="Schedule"
+              title="Pick a time that works for you"
+              intro="A free 30-minute consultation, on your calendar in under a minute. Choose a slot and you'll get a confirmation straight away."
+              align="center"
+            />
+            <Reveal delay={100}>
+              <CalendlyEmbed
+                url={site.calendlyUrl}
+                className="mx-auto mt-12 max-w-3xl"
+              />
+            </Reveal>
+            <p className="mt-8 text-center text-[14px] text-navy/55">
+              Would rather talk now?{" "}
+              <a
+                href={site.phoneHref}
+                className="font-semibold text-emerald-700 underline underline-offset-2"
+              >
+                Call {site.phone}
+              </a>{" "}
+              &middot; {site.hours}
+            </p>
+          </div>
+        </section>
+      ) : site.jotform.consultation ? (
         <section className="py-20 sm:py-24">
           <div className="container-x">
             <SectionHeading
@@ -198,6 +239,14 @@ export default function BookPage() {
           </div>
         </section>
       )}
+
+      {/*
+        Testimonials, immediately before the inquiry form. This is the page
+        where someone decides whether to hand over their details, and proof
+        belongs at the point of decision rather than on a page they may never
+        reach.
+      */}
+      <Testimonials limit={3} />
 
       {/* What to expect */}
       <section className="py-20 sm:py-24">
