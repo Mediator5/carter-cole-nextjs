@@ -113,6 +113,145 @@ if (env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS) {
   bad("Skipped — SMTP credentials missing");
 }
 
+// ---- 4. The lead system ---------------------------------------------------
+// Everything here is optional: an unset piece is reported as a warning, not a
+// failure, because the site runs without it. What this catches is the worse
+// case — a value that is set but wrong, which looks like it is working right
+// up until a lead goes missing.
+console.log("\nLead system");
+
+// Mailchimp ------------------------------------------------------------------
+const mcKey = env.MAILCHIMP_API_KEY;
+const mcList = env.MAILCHIMP_AUDIENCE_ID;
+
+if (!mcKey && !mcList) {
+  warn("Mailchimp not configured",
+       "Leads are still stored in Supabase and still alert you. Add MAILCHIMP_API_KEY and MAILCHIMP_AUDIENCE_ID to sync them to the broadcast list.");
+} else if (!mcKey || !mcList) {
+  bad(`Mailchimp is half configured — ${mcKey ? "MAILCHIMP_AUDIENCE_ID" : "MAILCHIMP_API_KEY"} is missing`,
+      "Both are needed. Audience ID: Audience -> More options -> Audience settings -> Audience ID.");
+} else {
+  // The key carries its data centre as a suffix (…-us21) and that is the API
+  // subdomain, so the prefix is derived rather than asked for.
+  const prefix = (env.MAILCHIMP_SERVER_PREFIX || mcKey.split("-")[1] || "").trim();
+  if (!prefix) {
+    bad("Could not work out your Mailchimp data centre from the API key",
+        'The key should end in something like "-us21". Copy the whole key, including that suffix.');
+  } else {
+    const auth = "Basic " + Buffer.from(`anystring:${mcKey}`).toString("base64");
+    const base = `https://${prefix}.api.mailchimp.com/3.0`;
+    try {
+      const res = await fetch(`${base}/lists/${mcList}`, { headers: { Authorization: auth } });
+      if (res.status === 401) {
+        bad("Mailchimp rejected the API key (401)", "Create a fresh key under Account -> Extras -> API keys.");
+      } else if (res.status === 404) {
+        bad(`Mailchimp has no audience with ID "${mcList}" (404)`,
+            "Audience -> More options -> Audience settings -> Audience ID. It is about 10 characters, not the audience name.");
+      } else if (!res.ok) {
+        bad(`Mailchimp returned HTTP ${res.status}`, `Data centre used: ${prefix}`);
+      } else {
+        const list = await res.json();
+        ok(`Mailchimp audience "${list.name}" (${list.stats?.member_count ?? 0} contacts, data centre ${prefix})`);
+
+        // The two merge fields the sync writes into. Missing ones do not break
+        // the sync — the values are simply dropped on the way in, silently,
+        // which is exactly the kind of thing nobody notices for six months.
+        // Audience fields ("merge fields"). These are the columns of the
+        // contact list. Email, First Name and Last Name exist in every
+        // audience; PHONE is present but hidden by default; SOURCE never
+        // exists until someone creates it.
+        const mf = await fetch(`${base}/lists/${mcList}/merge-fields`, { headers: { Authorization: auth } });
+        if (mf.ok) {
+          const fields = (await mf.json()).merge_fields || [];
+          const tags = fields.map((f) => f.tag);
+          for (const t of ["PHONE", "SOURCE"]) {
+            if (tags.includes(t)) ok(`Audience field ${t} exists`);
+            else warn(`Audience field ${t} does not exist — that value will be dropped on the way in`,
+                      `Audience -> three-dot menu -> "Audience fields and *|MERGE|* tags" -> Create a new field, merge tag ${t}.`);
+          }
+          const required = fields.filter((f) => f.required).map((f) => f.tag);
+          if (required.length) {
+            warn(`Audience fields marked required: ${required.join(", ")}`,
+                 "The site sends skip_merge_validation so signups are not rejected for missing them, but consider un-requiring them — the capture forms deliberately ask for very little.");
+          }
+        }
+
+        const free = (list.stats?.member_count ?? 0);
+        if (free >= 200) {
+          warn(`${free} contacts — Mailchimp's free plan stops at 250`,
+               "Sends are also capped at 500/month and 250/day on free. Worth upgrading before a campaign.");
+        }
+      }
+    } catch (e) {
+      bad(`Could not reach Mailchimp — ${e.message}`, "Network problem, or the data centre in the key is wrong.");
+    }
+  }
+}
+
+// Resend, if the list is being run from there instead ------------------------
+if (env.RESEND_AUDIENCE_ID && mcKey && mcList) {
+  warn("Both Mailchimp and RESEND_AUDIENCE_ID are set — Mailchimp wins",
+       "Clear RESEND_AUDIENCE_ID to avoid confusion, or clear the Mailchimp values to switch the list to Resend.");
+}
+
+// Lead alerts ----------------------------------------------------------------
+if (env.LEAD_NOTIFY_EMAIL) ok(`Lead alerts go to ${env.LEAD_NOTIFY_EMAIL}`);
+else warn("LEAD_NOTIFY_EMAIL is empty",
+          "Alerts will fall back to MAIL_REPLY_TO, then the site address. Set it explicitly so you know where they land.");
+
+const twilio = ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_FROM_NUMBER", "LEAD_NOTIFY_SMS"];
+const twilioSet = twilio.filter((k) => env[k]);
+if (twilioSet.length === 0) {
+  warn("Text alerts are off", "Email alerts still fire. Add the four TWILIO_* / LEAD_NOTIFY_SMS values to switch texts on.");
+} else if (twilioSet.length < twilio.length) {
+  bad(`Twilio is half configured — missing ${twilio.filter((k) => !env[k]).join(", ")}`,
+      "All four are needed or no text is sent.");
+} else {
+  const badNums = [env.TWILIO_FROM_NUMBER, ...env.LEAD_NOTIFY_SMS.split(",")]
+    .map((n) => n.trim()).filter((n) => n && !/^\+[1-9]\d{6,14}$/.test(n));
+  if (badNums.length) {
+    bad(`Phone number not in E.164 format: ${badNums.join(", ")}`,
+        "Twilio needs +1 then the ten digits, no spaces, dashes or brackets. E.g. +13135550100");
+  } else {
+    ok(`Text alerts to ${env.LEAD_NOTIFY_SMS}`);
+  }
+}
+
+// Calendly -------------------------------------------------------------------
+const cal = env.NEXT_PUBLIC_CALENDLY_URL;
+if (!cal) {
+  ok("Calendly using the built-in default (calendly.com/lashandasmarttaxiq/30min)");
+} else if (!/^https:\/\/calendly\.com\/.+/.test(cal)) {
+  bad(`NEXT_PUBLIC_CALENDLY_URL doesn't look like a Calendly link: ${cal}`,
+      "It should look like https://calendly.com/your-name/30min");
+} else {
+  ok(`Calendly override set: ${cal}`);
+}
+
+// Analytics ------------------------------------------------------------------
+const ga = env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+if (!ga) {
+  warn("Google Analytics is not installed",
+       "Do this before spending on ads — traffic history cannot be backfilled.");
+} else if (!/^G-[A-Z0-9]+$/i.test(ga)) {
+  bad(`NEXT_PUBLIC_GA_MEASUREMENT_ID looks wrong: ${ga}`,
+      'A GA4 measurement ID starts with "G-". "UA-" is the retired version and "AW-" is Google Ads.');
+} else {
+  ok(`Google Analytics ${ga}`);
+}
+
+// Webhook secrets ------------------------------------------------------------
+for (const k of ["JOTFORM_WEBHOOK_SECRET", "CALENDLY_WEBHOOK_SECRET"]) {
+  if (!env[k]) {
+    warn(`${k} is empty — that webhook accepts anything that finds the URL`,
+         "Set a long random string here and put it in the webhook URL as ?key=...");
+  } else if (env[k].length < 16) {
+    warn(`${k} is short (${env[k].length} characters)`, "Use something long enough not to be guessed.");
+  } else {
+    ok(k);
+  }
+}
+
 // ---- summary --------------------------------------------------------------
 console.log(
   failures === 0
