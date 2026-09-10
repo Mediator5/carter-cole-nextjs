@@ -50,7 +50,7 @@ export const site = {
    * profile serves the practice under either brand, and splitting reviews
    * across two profiles would halve the social proof on each.
    */
-  googleReviewUrl: "https://g.page/r/CffT2ZqKpzmfECE/review",
+  googleReviewUrl: "https://www.google.com/maps/place/CARTER+COLE+%26+ASSOCIATES+LLC/@42.3872353,-82.9498041,17z/data=!3m1!4b1!4m6!3m5!1s0x8824c5c8f9b28757:0x45d12a98b0fc5877!8m2!3d42.3872353!4d-82.9498041!16s%2Fg%2F11smp9hhhr?entry=ttu&g_ep=EgoyMDI2MDkwMi4wIKXMDSoASAFQAw%3D%3D",
   /** The same profile without the review prompt — for "find us" / map links. */
   googleMapsUrl: "https://g.page/r/CffT2ZqKpzmfECE",
   jotform: {
