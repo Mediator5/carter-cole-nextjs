@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import Reveal from "@/components/Reveal";
+import PurchaseTracker from "@/components/PurchaseTracker";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -24,6 +26,13 @@ export const metadata: Metadata = {
 export default function WorkbookThankYouPage() {
   return (
     <section className="bg-navy py-24 text-white sm:py-32">
+      {/* Reports the sale to GA4, Google Ads and Meta. Renders nothing.
+          Suspense because it reads search params, which opts its subtree —
+          and only its subtree — out of static rendering. */}
+      <Suspense fallback={null}>
+        <PurchaseTracker />
+      </Suspense>
+
       <div className="container-x max-w-2xl text-center">
         <Reveal>
           <span

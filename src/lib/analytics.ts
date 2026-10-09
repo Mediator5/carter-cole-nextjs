@@ -90,7 +90,8 @@ export type ConversionEvent =
   | "lead_intake"
   | "booking_started"
   | "phone_click"
-  | "purchase_started";
+  | "purchase_started"
+  | "purchase_completed";
 
 /**
  * Report a conversion to GA4, Google Ads and Meta at once.
@@ -101,7 +102,10 @@ export type ConversionEvent =
  */
 export function trackConversion(
   event: ConversionEvent,
-  params: Record<string, string | number> = {}
+  params: Record<string, string | number> = {},
+  /** Stable id for this specific conversion, so a later server-side send of
+   *  the same event can be deduplicated against this one. */
+  eventId?: string
 ) {
   if (typeof window === "undefined") return;
 
@@ -121,16 +125,26 @@ export function trackConversion(
     }
 
     // Meta's standard events, which its optimiser actually understands.
+    //
+    // "Purchase" is the one the Sales campaign optimises towards. Without it
+    // Meta spends the budget, learns nothing, and reports zero conversions
+    // while sales happen quietly in Stripe — which is invisible unless you
+    // read the code, so it is called out here rather than left implied.
     if (process.env.NEXT_PUBLIC_META_PIXEL_ID) {
       const metaEvent =
-        event === "purchase_started"
+        event === "purchase_completed"
+          ? "Purchase"
+          : event === "purchase_started"
           ? "InitiateCheckout"
           : event === "booking_started"
           ? "Schedule"
           : event === "phone_click"
           ? "Contact"
           : "Lead";
-      window.fbq?.("track", metaEvent, params);
+      // eventId lets the same conversion be sent again server-side through the
+      // Conversions API without being counted twice. Nothing sends it
+      // server-side yet; passing it now means that upgrade needs no change here.
+      window.fbq?.("track", metaEvent, params, eventId ? { eventID: eventId } : undefined);
     }
   } catch (err) {
     // Analytics must never be able to break a form submission.
@@ -151,6 +165,7 @@ function conversionLabel(event: ConversionEvent) {
     lead_intake: process.env.NEXT_PUBLIC_ADS_LABEL_INTAKE,
     booking_started: process.env.NEXT_PUBLIC_ADS_LABEL_BOOKING,
     phone_click: process.env.NEXT_PUBLIC_ADS_LABEL_PHONE,
+    purchase_completed: process.env.NEXT_PUBLIC_ADS_LABEL_PURCHASE,
     purchase_started: process.env.NEXT_PUBLIC_ADS_LABEL_PURCHASE,
   };
   return map[event];

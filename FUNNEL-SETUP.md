@@ -21,6 +21,7 @@ as it grows.
 | Admin dashboard | `/admin/subscribers` |
 | CSV export | `/api/admin/export` |
 | Email copy | `src/lib/sequence.ts` |
+| Purchase conversion tracking | `src/components/PurchaseTracker.tsx` |
 | Email design | `src/lib/mailer.ts` |
 | Database | `src/lib/db.ts` (SQLite → `data/subscribers.db`) |
 
@@ -113,6 +114,26 @@ says checkout is being set up.
 Whatever you choose — Stripe Payment Link, Gumroad, PayPal — remember it also
 has to **deliver the PDF**. Gumroad does that automatically. With a Stripe
 link you'll either email it manually or wire up an automation.
+
+#### The redirect must carry the session id
+
+In the Stripe Payment Link, set **After payment → Redirect to a page** to:
+
+```
+https://www.cartercoleandassociates.com/workbook/thank-you?session_id={CHECKOUT_SESSION_ID}
+```
+
+The `{CHECKOUT_SESSION_ID}` placeholder is literal — Stripe substitutes the
+real id. **Without it no Purchase conversion is ever reported**, which breaks
+Meta and Google Ads optimisation while leaving the sale itself working
+perfectly, so nothing looks wrong until you check why the ads aren't learning.
+
+The thank-you page is a public URL anyone can open, refresh or share. The
+tracker fires only when a real session id is present, and only once per id,
+so a refresh costs nothing and a shared link reports nothing. If the id is
+missing it says so in the browser console rather than inventing a sale —
+Meta's optimiser trained on conversions that never happened will spend the
+budget finding more people who also don't buy.
 
 ---
 
