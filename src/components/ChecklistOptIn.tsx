@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { trackConversion } from "@/lib/analytics";
 
 type State = "idle" | "sending" | "done" | "error";
 
@@ -40,6 +41,17 @@ export default function ChecklistOptIn({
       setDownloadUrl(json.downloadUrl);
       setEmailed(Boolean(json.emailed));
       setState("done");
+
+      // The Meta Leads campaign optimises for "Lead". This is the only form
+      // on /checklist, which is that campaign's landing page — so without
+      // this line Meta spends the budget, is told nothing, reports zero
+      // results, and never learns who to show the ad to. The same omission
+      // was found on the workbook's Purchase event in October 2026; this is
+      // the other half of it.
+      //
+      // Fired after a confirmed ok from the API, so a lead is counted when a
+      // lead actually exists, not when somebody presses a button.
+      trackConversion("lead_checklist", { source: variant });
     } catch (err) {
       setMessage(
         err instanceof Error ? err.message : "Something went wrong. Try again."
