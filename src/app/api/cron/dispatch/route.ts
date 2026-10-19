@@ -4,9 +4,16 @@ import {
   recordSend,
   sentKeysForAll,
   sendsInLast24h,
+  subscriberIdsWhoBought,
   type Subscriber,
 } from "@/lib/db";
 import { sequence } from "@/lib/sequence";
+import {
+  PUSH_START,
+  SUPERSEDED_KEYS,
+  pushEnabled,
+  workbookPush,
+} from "@/lib/campaign";
 import {
   sendSequenceEmail,
   mailerConfigured,
@@ -68,6 +75,13 @@ async function dispatch(dryRun: boolean) {
 
   const subs = await activeSubscribers();
   const sentBySubscriber = await sentKeysForAll();
+  // Who already owns the workbook. Loaded once for the whole run.
+  const bought = await subscriberIdsWhoBought("workbook");
+
+  const pushOn = pushEnabled();
+  // The push is timed from one shared start date, not from each person's
+  // signup, so the whole list moves through it together.
+  const pushAge = daysSince(`${PUSH_START}T00:00:00Z`);
 
   // Google enforces a hard daily cap (2,000/day on Workspace, ~500 on free
   // Gmail and trial accounts). Blowing through it locks the account out of
@@ -84,10 +98,36 @@ async function dispatch(dryRun: boolean) {
   for (const sub of subs as Subscriber[]) {
     const age = daysSince(sub.created_at);
     const sent = sentBySubscriber.get(sub.id) ?? new Set<string>();
+    const owns = bought.has(sub.id);
 
-    for (const email of sequence) {
+    // The push goes to the people who were already on the list when it
+    // started, and never to someone who already owns the workbook. Anyone who
+    // signs up from now on gets the ordinary welcome sequence instead — being
+    // dropped into the middle of a sales push you were never introduced to is
+    // a bad first impression, and their own offer email is only days away.
+    const enrolledInPush =
+      pushOn && !owns && new Date(sub.created_at) < new Date(`${PUSH_START}T00:00:00Z`);
+
+    const pushDue = enrolledInPush
+      ? workbookPush.filter((e) => pushAge >= e.dayOffset)
+      : [];
+
+    const baseDue = sequence.filter((e) => {
+      // Suppressed for buyers, and for anyone in the push — there it would
+      // just be the same argument twice.
+      if ((owns || enrolledInPush) && SUPERSEDED_KEYS.includes(e.key)) return false;
+      return age >= e.dayOffset;
+    });
+
+    // The checklist they actually asked for always goes first: nobody is
+    // pitched the $17 workbook before the free thing they signed up for has
+    // landed. After that the push leads, because it runs on a fixed calendar
+    // and cannot wait for the welcome emails to catch up.
+    const delivery = baseDue.filter((e) => e.key === "delivery");
+    const nurture = baseDue.filter((e) => e.key !== "delivery");
+
+    for (const email of [...delivery, ...pushDue, ...nurture]) {
       if (sent.has(email.key)) continue;
-      if (age < email.dayOffset) continue;
 
       if (dryRun) {
         results.push({ email: sub.email, emailKey: email.key, status: "due" });

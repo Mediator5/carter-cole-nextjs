@@ -318,6 +318,27 @@ export async function recordPurchase(input: {
 }
 
 /** True when this subscriber has paid for this product. Gates the download. */
+/**
+ * Every subscriber id with a recorded purchase of `product`, in one query.
+ *
+ * The dispatcher needs this for the whole list on every run; asking
+ * hasPurchased() per subscriber would be one round trip each.
+ */
+export async function subscriberIdsWhoBought(product: string): Promise<Set<number>> {
+  const { data, error } = await supabase()
+    .from("purchases")
+    .select("subscriber_id")
+    .eq("product", product);
+
+  if (error) {
+    // Fail closed: if we cannot tell who bought, send nobody a sales email
+    // rather than risk pitching the workbook to someone who owns it.
+    console.error("[db] subscriberIdsWhoBought failed:", error.message);
+    throw new Error(`Could not load purchases: ${error.message}`);
+  }
+  return new Set((data ?? []).map((r: { subscriber_id: number }) => r.subscriber_id));
+}
+
 export async function hasPurchased(subscriberId: number, product: string) {
   const { data, error } = await supabase()
     .from("purchases")
