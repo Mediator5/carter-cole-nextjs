@@ -51,12 +51,12 @@ export const workbookPush: SequenceEmail[] = [
   },
   {
     key: "push-2",
-    dayOffset: 2,
+    dayOffset: 1,
     subject: "What's actually in the 30 days",
     preheader: "A fair question before you spend $17. Here's the plain answer.",
     body: [
       "Hi {{name}},",
-      "I sent you something about the workbook a couple of days ago, and I know what the reasonable reaction is: what do I actually get for $17?",
+      "I wrote to you yesterday about the workbook, and I know what the reasonable reaction is: what do I actually get for $17?",
       "Here it is, plainly.",
       "- Days 1–7 — your foundation. Entity, business bank account, bookkeeping, the paperwork that quietly decides how much tax you pay later.",
       "- Days 8–14 — your money. Knowing your real numbers, pricing properly, and paying yourself first instead of last.",
@@ -70,7 +70,7 @@ export const workbookPush: SequenceEmail[] = [
   },
   {
     key: "push-3",
-    dayOffset: 4,
+    dayOffset: 2,
     subject: "What another year of it costs",
     preheader: "The gaps don't stay the same size.",
     body: [
@@ -80,14 +80,14 @@ export const workbookPush: SequenceEmail[] = [
       "Same with the entity you meant to set up. Same with the books you meant to start in January.",
       "> I didn't learn that from a course. I learned it by paying for it. Six times.",
       "Thirty days of one-page tasks, against another year of that. That's the trade.",
-      "And so there's no risk sitting on your side of it: work through the workbook, and if it hasn't given you something worth more than $17, reply to this email and I'll refund you. Keep the workbook either way.",
+      "It's $17 once. No subscription, no upsell, and the download link never expires — it's yours to come back to whenever you need it.",
       "[[CTA:Get the workbook — $17|{{workbook}}]]",
       "— Lashanda",
     ],
   },
   {
     key: "push-4",
-    dayOffset: 6,
+    dayOffset: 3,
     subject: "Thirty days from now",
     preheader: "Start this week and you're finished before tax season starts.",
     body: [
@@ -97,7 +97,7 @@ export const workbookPush: SequenceEmail[] = [
       "Start it in January instead and you'll be doing it in the middle of tax season, which is the worst possible time to discover your records are a mess. I see that every single year.",
       "> That's not a sales deadline. It's just the calendar.",
       "[[CTA:Get the workbook — $17|{{workbook}}]]",
-      "Thirty days. $17. Refunded if it isn't worth it.",
+      "Thirty days. $17. Yours to keep.",
       "And if it isn't for you, that is completely fine — the checklist is still yours and I'll stop asking. You'll hear from me next when I have something useful to say about the tax year.",
       "— Lashanda",
       "P.S. Carter Cole & Associates handles tax preparation and strategy, credit, business formation and bookkeeping. If the checklist showed you a gap you'd rather just hand to someone, reply and tell me which one.",
