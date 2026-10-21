@@ -98,6 +98,7 @@ export const nav = [
   { label: "Services", href: "/services" },
   { label: "SmartTaxIQ", href: "/smarttaxiq" },
   { label: "Business Services", href: "/business-services" },
+  { label: "Website Design", href: "/website-design" },
   { label: "Workbook", href: "/workbook" },
   { label: "Resources", href: "/resources" },
   { label: "Locations", href: "/locations" },
@@ -225,6 +226,22 @@ export const services: Service[] = [
       "Regular accountability check-ins",
     ],
     href: "/services#consulting",
+    division: "business",
+  },
+  {
+    slug: "website-design-development",
+    title: "Website Design & Development",
+    short:
+      "A professional site your customers trust, built once and owned outright by you.",
+    body: "Most small businesses lose work before the first conversation, because the website either does not exist or does not look like somewhere you would hand over your card details. We build on fixed-price packages, on your own domain and hosting, with no monthly fee to us and nothing held back at handover.",
+    bullets: [
+      "Fixed-price Starter, Standard and Premium packages",
+      "Responsive design for phone, tablet and desktop",
+      "Lead capture, contact forms and CRM integration",
+      "On-page SEO, speed and security configuration",
+      "E-commerce, booking and payment gateway setup",
+    ],
+    href: "/website-design",
     division: "business",
   },
 ];

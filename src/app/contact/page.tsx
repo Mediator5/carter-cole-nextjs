@@ -47,7 +47,31 @@ const departments = [
   },
 ];
 
-export default function ContactPage() {
+// Package cards on /website-design link here with ?department=website, so the
+// form opens on the right department instead of making somebody set it again.
+// Read on the server and passed down as a prop: useSearchParams would make this
+// a client component and would need its own Suspense boundary.
+const DEPARTMENTS = [
+  "tax",
+  "credit",
+  "business",
+  "bookkeeping",
+  "consulting",
+  "website",
+  "general",
+];
+
+export default function ContactPage({
+  searchParams,
+}: {
+  searchParams?: { department?: string | string[] };
+}) {
+  const requested = Array.isArray(searchParams?.department)
+    ? searchParams?.department[0]
+    : searchParams?.department;
+  const defaultDepartment =
+    requested && DEPARTMENTS.includes(requested) ? requested : "general";
+
   return (
     <>
       <PageHero
@@ -139,7 +163,7 @@ export default function ContactPage() {
 
           <Reveal delay={120}>
             <div className="lg:sticky lg:top-28">
-              <ContactForm />
+              <ContactForm defaultDepartment={defaultDepartment} />
             </div>
           </Reveal>
         </div>

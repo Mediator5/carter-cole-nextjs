@@ -8,6 +8,7 @@ const departments = [
   { value: "business", label: "Business formation & compliance" },
   { value: "bookkeeping", label: "Bookkeeping & payroll" },
   { value: "consulting", label: "Small business consulting" },
+  { value: "website", label: "Website design & development" },
   { value: "general", label: "Something else / general question" },
 ];
 

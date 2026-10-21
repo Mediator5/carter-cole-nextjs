@@ -48,6 +48,10 @@ const DEPARTMENTS: Record<string, { inbox: string; label: string }> = {
     inbox: "info@cartercoleandassociates.com",
     label: "Small business consulting",
   },
+  website: {
+    inbox: "info@cartercoleandassociates.com",
+    label: "Website design & development",
+  },
   general: {
     inbox: "info@cartercoleandassociates.com",
     label: "General question",

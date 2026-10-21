@@ -9,6 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/services", priority: 0.9, freq: "monthly" as const },
     { path: "/smarttaxiq", priority: 0.95, freq: "weekly" as const },
     { path: "/business-services", priority: 0.85, freq: "monthly" as const },
+    { path: "/website-design", priority: 0.85, freq: "monthly" as const },
     { path: "/book", priority: 0.9, freq: "monthly" as const },
     { path: "/checklist", priority: 0.9, freq: "monthly" as const },
     { path: "/workbook", priority: 0.85, freq: "monthly" as const },

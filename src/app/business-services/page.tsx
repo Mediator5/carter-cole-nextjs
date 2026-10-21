@@ -5,6 +5,7 @@ import Reveal from "@/components/Reveal";
 import { PageHero, SectionHeading } from "@/components/Section";
 import CTA from "@/components/CTA";
 import LeadCapture from "@/components/LeadCapture";
+import WebsitePackages from "@/components/WebsitePackages";
 
 export const metadata: Metadata = {
   title: "Business Services",
@@ -254,6 +255,15 @@ export default function BusinessServicesPage() {
           </Reveal>
         </div>
       </section>
+
+      <div className="bg-cream">
+        <WebsitePackages
+          compact
+          eyebrow="Website design & development"
+          title="And when the business is set up, it needs somewhere to be found"
+          intro="Fixed-price website packages, built on your own domain and hosting, owned outright by you. No monthly fee, nothing held back at handover."
+        />
+      </div>
 
       <LeadCapture
         source="business-services"
